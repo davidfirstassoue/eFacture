@@ -437,6 +437,20 @@ body {
     text-transform: uppercase;
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-logo {
+    height: 52px;
+    max-height: 56px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
 .header-meta {
     text-align: right;
     font-size: 13.5px;

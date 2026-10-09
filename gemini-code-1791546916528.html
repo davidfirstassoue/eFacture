@@ -50,6 +50,20 @@
             text-transform: uppercase;
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-logo {
+            height: 52px;
+            max-height: 56px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+        }
+
         .header-meta {
             text-align: right;
             font-size: 13.5px;
@@ -231,9 +245,12 @@
         <div class="header-title">
             <h1>Bon de Commande<br>Interne</h1>
         </div>
-        <div class="header-meta">
-            <p><strong>N° :</strong> BCI-2026-0147</p>
-            <p><strong>Date :</strong> 09/10/2026</p>
+        <div class="header-right">
+            <div class="header-meta">
+                <p><strong>N° :</strong> BCI-2026-0147</p>
+                <p><strong>Date :</strong> 09/10/2026</p>
+            </div>
+            <img src="maquette/logo.webp" alt="Logo CHU Owendo" class="header-logo">
         </div>
     </header>
 
