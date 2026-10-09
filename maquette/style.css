@@ -571,12 +571,16 @@ body {
     padding: 8px 10px;
     vertical-align: top;
     height: 140px;
-    line-height: 1.6;
+    line-height: 1.5;
     color: #2d3748;
 }
 
-.validations-table .sig-label {
-    margin-top: 14px;
+.val-cell-inner {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 124px;
+    min-height: 124px;
 }
 
 /* Note de bas de page */
