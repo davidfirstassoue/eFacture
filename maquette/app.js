@@ -21,7 +21,13 @@ const DEMO_ORDERS = [
             { designation: "Rouleaux d'étiquettes", qty: 10, price: 4200 },
             { designation: "Gants de manutention (paires)", qty: 15, price: 2500 },
             { designation: "Cutters de sécurité", qty: 8, price: 1500 }
-        ]
+        ],
+        signers: {
+            name1: "Marie Koumba", date1: "2026-10-09",
+            name2: "Paul M.", date2: "",
+            name3: "", date3: "",
+            name4: "", date4: ""
+        }
     },
     {
         id: "BCI-2026-0148",
@@ -37,7 +43,13 @@ const DEMO_ORDERS = [
             { designation: "Tubes sous vide Héparine de Lithium (Bouchon Vert) 5ml", qty: 300, price: 130 },
             { designation: "Aiguilles de prélèvement multiples 21G", qty: 600, price: 75 },
             { designation: "Boîtes de gants d'examen latex non poudrés (M)", qty: 20, price: 4500 }
-        ]
+        ],
+        signers: {
+            name1: "Dr. A. Kouame", date1: "2026-10-09",
+            name2: "Chef de Département", date2: "",
+            name3: "", date3: "",
+            name4: "", date4: ""
+        }
     }
 ];
 
@@ -84,10 +96,50 @@ function updateBadgeCounter() {
 }
 
 // ==========================================================================
+// Génération Automatique des Numéros de Bon (Sans base de données)
+// ==========================================================================
+function generateNextOrderNumber() {
+    const orders = getOrders();
+    const currentYear = new Date().getFullYear();
+    let maxSeq = 146; // Base séquentielle de départ
+
+    orders.forEach(o => {
+        if (!o.id) return;
+        const match = o.id.match(/(\d+)$/);
+        if (match) {
+            const num = parseInt(match[1], 10);
+            if (num > maxSeq) maxSeq = num;
+        }
+    });
+
+    const nextSeq = maxSeq + 1;
+    const padded = String(nextSeq).padStart(4, "0");
+    return `BCI-${currentYear}-${padded}`;
+}
+
+function generateAutoNumber() {
+    const newNum = generateNextOrderNumber();
+    const input = document.getElementById("inp-num");
+    if (input) input.value = newNum;
+    if (activeOrder) activeOrder.id = newNum;
+    syncToDocument();
+    showToast(`Numéro automatique généré : ${newNum}`);
+}
+
+// ==========================================================================
 // Chargement d'une commande dans le formulaire Split-Screen
 // ==========================================================================
 function loadOrderIntoForm(order) {
     activeOrder = JSON.parse(JSON.stringify(order));
+
+    if (!activeOrder.signers) {
+        activeOrder.signers = {
+            name1: activeOrder.requester || "", date1: activeOrder.date || "",
+            name2: activeOrder.manager || "", date2: "",
+            name3: "", date3: "",
+            name4: "", date4: ""
+        };
+    }
 
     document.getElementById("inp-num").value = activeOrder.id;
     document.getElementById("inp-date").value = activeOrder.date;
@@ -97,6 +149,14 @@ function loadOrderIntoForm(order) {
     document.getElementById("inp-delivery").value = activeOrder.delivery || "";
     document.getElementById("inp-supplier").value = activeOrder.supplier || "";
     document.getElementById("inp-motif").value = activeOrder.motif || "";
+
+    // Chargement des 4 cases de validation
+    for (let i = 1; i <= 4; i++) {
+        const nameInput = document.getElementById(`inp-val-name${i}`);
+        const dateInput = document.getElementById(`inp-val-date${i}`);
+        if (nameInput) nameInput.value = activeOrder.signers[`name${i}`] || "";
+        if (dateInput) dateInput.value = activeOrder.signers[`date${i}`] || "";
+    }
 
     renderFormArticlesTable();
     syncToDocument();
@@ -200,7 +260,7 @@ function updateFormTotal() {
 function syncToDocument() {
     if (!activeOrder) return;
 
-    // Récupérer les valeurs des inputs
+    // Récupérer les valeurs des inputs principaux
     const num = document.getElementById("inp-num").value || "BCI-2026-0001";
     const dateVal = document.getElementById("inp-date").value || new Date().toISOString().split("T")[0];
     const requester = document.getElementById("inp-requester").value || "-";
@@ -232,7 +292,26 @@ function syncToDocument() {
     document.getElementById("pv-delivery").innerText = delivery;
     document.getElementById("pv-supplier").innerText = supplier;
     document.getElementById("pv-motif").innerText = motif;
-    document.getElementById("pv-val-requester").innerText = requester;
+
+    // Synchronisation des 4 cases de validation du bas
+    if (!activeOrder.signers) activeOrder.signers = {};
+    for (let i = 1; i <= 4; i++) {
+        const valName = document.getElementById(`inp-val-name${i}`)?.value || "";
+        const valDate = document.getElementById(`inp-val-date${i}`)?.value || "";
+
+        activeOrder.signers[`name${i}`] = valName;
+        activeOrder.signers[`date${i}`] = valDate;
+
+        const pvNameSpan = document.getElementById(`pv-val-name${i}`);
+        const pvDateSpan = document.getElementById(`pv-val-date${i}`);
+
+        if (pvNameSpan) {
+            pvNameSpan.innerText = valName.trim() ? valName : "_________________";
+        }
+        if (pvDateSpan) {
+            pvDateSpan.innerText = valDate ? valDate.split("-").reverse().join("/") : "___ / ___ / ______";
+        }
+    }
 
     // Rendu des articles dans le document A4 officiel
     const pvTbody = document.getElementById("pv-articles-tbody");
@@ -298,13 +377,11 @@ function saveActiveOrder() {
 }
 
 function createNewOrderPrompt() {
-    const orders = getOrders();
-    // Génère le prochain identifiant automatique
-    const nextNum = orders.length + 149;
     const today = new Date().toISOString().split("T")[0];
+    const newNum = generateNextOrderNumber();
 
     const newBlankOrder = {
-        id: `BCI-2026-0${nextNum}`,
+        id: newNum,
         date: today,
         requester: "",
         service: "",
@@ -314,12 +391,18 @@ function createNewOrderPrompt() {
         motif: "",
         items: [
             { designation: "", qty: 1, price: 0 }
-        ]
+        ],
+        signers: {
+            name1: "", date1: today,
+            name2: "", date2: "",
+            name3: "", date3: "",
+            name4: "", date4: ""
+        }
     };
 
     loadOrderIntoForm(newBlankOrder);
     switchTab("editor");
-    showToast(`Nouveau bon ${newBlankOrder.id} initialisé`);
+    showToast(`Nouveau bon ${newBlankOrder.id} généré automatiquement`);
     setTimeout(() => {
         document.getElementById("inp-requester").focus();
     }, 100);
@@ -352,19 +435,25 @@ function duplicateOrder(orderId) {
     const source = orders.find(o => o.id === orderId);
     if (!source) return;
 
-    const nextNum = orders.length + 150;
     const today = new Date().toISOString().split("T")[0];
+    const newNum = generateNextOrderNumber();
 
     const cloned = JSON.parse(JSON.stringify(source));
-    cloned.id = `BCI-2026-0${nextNum}`;
+    cloned.id = newNum;
     cloned.date = today;
+    if (cloned.signers) {
+        cloned.signers.date1 = today;
+        cloned.signers.date2 = "";
+        cloned.signers.date3 = "";
+        cloned.signers.date4 = "";
+    }
 
     orders.unshift(cloned);
     saveOrdersList(orders);
     renderRegistry();
     loadOrderIntoForm(cloned);
     switchTab("editor");
-    showToast(`Bon dupliqué avec le N° ${cloned.id}`);
+    showToast(`Bon dupliqué avec le N° automatique ${cloned.id}`);
 }
 
 function openOrderInEditor(orderId) {

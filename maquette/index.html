@@ -54,8 +54,14 @@
                             <h3 class="form-section-title">1. Informations Générales</h3>
                             <div class="form-grid-2">
                                 <div class="form-group">
-                                    <label for="inp-num">Numéro de Bon</label>
-                                    <input type="text" id="inp-num" class="form-input" placeholder="Ex: BCI-2026-0147" oninput="syncToDocument()">
+                                    <label for="inp-num" style="display: flex; justify-content: space-between;">
+                                        <span>Numéro de Bon</span>
+                                        <span style="font-size: 10px; color: var(--primary); font-weight: 600;">(Auto)</span>
+                                    </label>
+                                    <div style="display: flex; gap: 4px;">
+                                        <input type="text" id="inp-num" class="form-input" style="flex: 1;" placeholder="Ex: BCI-2026-0147" oninput="syncToDocument()">
+                                        <button type="button" class="btn btn-outline-dark btn-sm" title="Générer un numéro automatique suivant" onclick="generateAutoNumber()">Auto N°</button>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="inp-date">Date d'émission</label>
@@ -128,6 +134,33 @@
                             <h3 class="form-section-title">3. Motif de la Demande</h3>
                             <div class="form-group">
                                 <textarea id="inp-motif" class="form-input" rows="2" placeholder="Précisez la justification du besoin (ex: Rupture de stock imminente, réapprovisionnement mensuel...)" oninput="syncToDocument()"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Section 4 : Validations & Signataires (Cases du bas) -->
+                        <div class="form-section">
+                            <h3 class="form-section-title">4. Validations & Signataires (Cases du bas)</h3>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label>1. Demandeur</label>
+                                    <input type="text" id="inp-val-name1" class="form-input" placeholder="Nom du demandeur" oninput="syncToDocument()">
+                                    <input type="date" id="inp-val-date1" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
+                                </div>
+                                <div class="form-group">
+                                    <label>2. Resp. de Service</label>
+                                    <input type="text" id="inp-val-name2" class="form-input" placeholder="Nom du responsable" oninput="syncToDocument()">
+                                    <input type="date" id="inp-val-date2" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
+                                </div>
+                                <div class="form-group">
+                                    <label>3. Dir. Financier</label>
+                                    <input type="text" id="inp-val-name3" class="form-input" placeholder="Nom du dir. financier" oninput="syncToDocument()">
+                                    <input type="date" id="inp-val-date3" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
+                                </div>
+                                <div class="form-group">
+                                    <label>4. Dir. Général</label>
+                                    <input type="text" id="inp-val-name4" class="form-input" placeholder="Nom du dir. général" oninput="syncToDocument()">
+                                    <input type="date" id="inp-val-date4" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
+                                </div>
                             </div>
                         </div>
 
@@ -219,23 +252,23 @@
                                 <tbody>
                                     <tr>
                                         <td>
-                                            <div>Nom : <span id="pv-val-requester">Marie Koumba</span></div>
-                                            <div>Date : ___ / ___ / ______</div>
+                                            <div>Nom : <span id="pv-val-name1">Marie Koumba</span></div>
+                                            <div>Date : <span id="pv-val-date1">___ / ___ / ______</span></div>
                                             <div class="sig-label">Signature :</div>
                                         </td>
                                         <td>
-                                            <div>Nom : _________________</div>
-                                            <div>Date : ___ / ___ / ______</div>
+                                            <div>Nom : <span id="pv-val-name2">_________________</span></div>
+                                            <div>Date : <span id="pv-val-date2">___ / ___ / ______</span></div>
                                             <div class="sig-label">Signature :</div>
                                         </td>
                                         <td>
-                                            <div>Nom : _________________</div>
-                                            <div>Date : ___ / ___ / ______</div>
+                                            <div>Nom : <span id="pv-val-name3">_________________</span></div>
+                                            <div>Date : <span id="pv-val-date3">___ / ___ / ______</span></div>
                                             <div class="sig-label">Signature :</div>
                                         </td>
                                         <td>
-                                            <div>Nom : _________________</div>
-                                            <div>Date : ___ / ___ / ______</div>
+                                            <div>Nom : <span id="pv-val-name4">_________________</span></div>
+                                            <div>Date : <span id="pv-val-date4">___ / ___ / ______</span></div>
                                             <div class="sig-label">Signature :</div>
                                         </td>
                                     </tr>
