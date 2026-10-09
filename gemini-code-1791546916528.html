@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bon de Commande Interne</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #1a1a1a;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .document-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 800px;
+            min-height: 1120px; /* Proportion A4 stricte */
+            padding: 38px 45px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border-radius: 0;
+            box-sizing: border-box;
+        }
+
+        /* En-tête */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding-bottom: 8px;
+            border-bottom: 3px solid #1a365d;
+            margin-bottom: 16px;
+        }
+
+        .header-title h1 {
+            color: #1a365d;
+            font-size: 23px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            line-height: 1.15;
+            text-transform: uppercase;
+        }
+
+        .header-meta {
+            text-align: right;
+            font-size: 13.5px;
+            color: #333333;
+            line-height: 1.5;
+        }
+
+        .header-meta strong {
+            color: #000000;
+        }
+
+        /* Titres de section */
+        .section-title {
+            color: #1a365d;
+            font-size: 13.5px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        /* Tableau Informations */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            font-size: 12.5px;
+        }
+
+        .info-table td {
+            border: 1px solid #c2c9d6;
+            padding: 6px 12px;
+        }
+
+        .info-table .label {
+            font-weight: 700;
+            color: #000000;
+            background-color: #ffffff;
+            width: 18%;
+        }
+
+        .info-table .value {
+            color: #2d3748;
+            width: 32%;
+        }
+
+        /* Tableau Articles */
+        .articles-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            font-size: 12.5px;
+        }
+
+        .articles-table th {
+            background-color: #1a365d;
+            color: #ffffff;
+            font-weight: 600;
+            padding: 8px 10px;
+            border: 1px solid #1a365d;
+        }
+
+        .articles-table td {
+            border: 1px solid #c2c9d6;
+            padding: 6px 10px;
+            color: #2d3748;
+        }
+
+        .articles-table td.center {
+            text-align: center;
+        }
+
+        .articles-table td.right {
+            text-align: right;
+        }
+
+        .articles-table tr.empty-row td {
+            height: 22px;
+        }
+
+        .articles-table .total-row td {
+            border: none;
+            border-top: 1px solid #c2c9d6;
+        }
+
+        .articles-table .total-label {
+            background-color: #e2e8f0;
+            font-weight: 700;
+            text-align: right;
+            padding-right: 15px;
+            border: 1px solid #c2c9d6 !important;
+            letter-spacing: 0.5px;
+        }
+
+        .articles-table .total-amount {
+            background-color: #e2e8f0;
+            font-weight: 700;
+            text-align: right;
+            border: 1px solid #c2c9d6 !important;
+        }
+
+        /* Motif */
+        .motif-box {
+            border: 1px solid #c2c9d6;
+            padding: 8px 12px;
+            font-size: 12.5px;
+            color: #2d3748;
+            margin-bottom: 16px;
+            background-color: #ffffff;
+        }
+
+        /* Validations */
+        .validations-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .validations-table th {
+            background-color: #1a365d;
+            color: #ffffff;
+            font-weight: 600;
+            padding: 7px 6px;
+            text-align: center;
+            border: 1px solid #1a365d;
+            width: 25%;
+        }
+
+        .validations-table td {
+            border: 1px solid #c2c9d6;
+            padding: 8px 10px;
+            vertical-align: top;
+            height: 140px;
+            line-height: 1.6;
+            color: #2d3748;
+        }
+
+        .validations-table .sig-label {
+            margin-top: 14px;
+        }
+
+        /* Note de bas de page */
+        .footer-note {
+            font-size: 10px;
+            color: #718096;
+            text-align: left;
+            margin-top: 8px;
+        }
+
+        /* Styles d'impression */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+            body {
+                background-color: #ffffff;
+                padding: 0;
+                margin: 0;
+            }
+            .document-container {
+                box-shadow: none;
+                padding: 15mm 16mm;
+                max-width: 100%;
+                width: 100%;
+                min-height: 297mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="document-container">
+    <!-- En-tête -->
+    <header class="header">
+        <div class="header-title">
+            <h1>Bon de Commande<br>Interne</h1>
+        </div>
+        <div class="header-meta">
+            <p><strong>N° :</strong> BCI-2026-0147</p>
+            <p><strong>Date :</strong> 09/10/2026</p>
+        </div>
+    </header>
+
+    <!-- Informations sur la demande -->
+    <section>
+        <h2 class="section-title">Informations sur la demande</h2>
+        <table class="info-table">
+            <tr>
+                <td class="label">Demandeur</td>
+                <td class="value">Marie Koumba</td>
+                <td class="label">Service</td>
+                <td class="value">Logistique</td>
+            </tr>
+            <tr>
+                <td class="label">Responsable</td>
+                <td class="value">Paul M.</td>
+                <td class="label">Lieu de livraison</td>
+                <td class="value">Entrepôt principal</td>
+            </tr>
+            <tr>
+                <td class="label">Fournisseur suggéré</td>
+                <td class="value" colspan="3">Papeterie Centrale</td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- Articles demandés -->
+    <section>
+        <h2 class="section-title">Articles demandés</h2>
+        <table class="articles-table">
+            <thead>
+                <tr>
+                    <th style="width: 7%;">N°</th>
+                    <th style="width: 45%;">Désignation</th>
+                    <th style="width: 10%;">Qté</th>
+                    <th style="width: 19%;">Prix unitaire (FCFA)</th>
+                    <th style="width: 19%;">Total (FCFA)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="center">1</td>
+                    <td>Ramettes papier A4 80 g</td>
+                    <td class="center">20</td>
+                    <td class="right">3 500</td>
+                    <td class="right">70 000</td>
+                </tr>
+                <tr>
+                    <td class="center">2</td>
+                    <td>Cartons d'archivage</td>
+                    <td class="center">30</td>
+                    <td class="right">1 800</td>
+                    <td class="right">54 000</td>
+                </tr>
+                <tr>
+                    <td class="center">3</td>
+                    <td>Rouleaux d'étiquettes</td>
+                    <td class="center">10</td>
+                    <td class="right">4 200</td>
+                    <td class="right">42 000</td>
+                </tr>
+                <tr>
+                    <td class="center">4</td>
+                    <td>Gants de manutention (paires)</td>
+                    <td class="center">15</td>
+                    <td class="right">2 500</td>
+                    <td class="right">37 500</td>
+                </tr>
+                <tr>
+                    <td class="center">5</td>
+                    <td>Cutters de sécurité</td>
+                    <td class="center">8</td>
+                    <td class="right">1 500</td>
+                    <td class="right">12 000</td>
+                </tr>
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3" style="border: none;"></td>
+                    <td class="total-label">TOTAL</td>
+                    <td class="total-amount">215 500</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Motif de la demande -->
+    <section>
+        <h2 class="section-title">Motif de la demande</h2>
+        <div class="motif-box">
+            Réapprovisionnement trimestriel des fournitures de l'entrepôt (stock actuel sous le seuil minimal).
+        </div>
+    </section>
+
+    <!-- Validations -->
+    <section>
+        <h2 class="section-title">Validations</h2>
+        <table class="validations-table">
+            <thead>
+                <tr>
+                    <th>Demandeur</th>
+                    <th>Responsable de service</th>
+                    <th>Directeur financier</th>
+                    <th>Directeur général</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div>Nom : Marie Koumba</div>
+                        <div>Date : ___ / ___ / ______</div>
+                        <div class="sig-label">Signature :</div>
+                    </td>
+                    <td>
+                        <div>Nom : _________________</div>
+                        <div>Date : ___ / ___ / ______</div>
+                        <div class="sig-label">Signature :</div>
+                    </td>
+                    <td>
+                        <div>Nom : _________________</div>
+                        <div>Date : ___ / ___ / ______</div>
+                        <div class="sig-label">Signature :</div>
+                    </td>
+                    <td>
+                        <div>Nom : _________________</div>
+                        <div>Date : ___ / ___ / ______</div>
+                        <div class="sig-label">Signature :</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Note de bas de page -->
+    <footer class="footer-note">
+        Document interne à usage exclusif de l'entreprise. Exemple fictif : noms, montants et références à titre d'illustration.
+    </footer>
+</div>
+
+</body>
+</html>

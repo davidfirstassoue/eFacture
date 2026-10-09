@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Bons de Commande Internes - Hôpital</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Barre de Navigation Supérieure -->
+    <header class="navbar">
+        <div class="nav-brand">
+            <span class="brand-badge">HÔPITAL</span>
+            <h1>Bons de Commande Internes</h1>
+        </div>
+
+        <nav class="nav-tabs">
+            <button class="nav-tab-btn active" id="tab-editor" onclick="switchTab('editor')">
+                Saisie & Aperçu Direct
+            </button>
+            <button class="nav-tab-btn" id="tab-registry" onclick="switchTab('registry')">
+                Registre des Bons <span class="tab-counter" id="badge-total-orders">2</span>
+            </button>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="btn btn-outline" onclick="createNewOrderPrompt()">+ Nouveau</button>
+            <button class="btn btn-primary" onclick="saveActiveOrder()">Enregistrer</button>
+            <button class="btn btn-dark" onclick="triggerPrint()">Imprimer A4</button>
+        </div>
+    </header>
+
+    <!-- Conteneur Principal des Vues -->
+    <main class="main-content">
+
+        <!-- =================================================================
+             VUE 1 : SPLIT-SCREEN (Saisie à gauche / Document A4 à droite)
+             ================================================================= -->
+        <section class="view-panel active" id="view-editor">
+            <div class="split-screen">
+
+                <!-- VOLET GAUCHE : FORMULAIRE DE SAISIE -->
+                <div class="split-form-pane">
+                    <div class="form-header-bar">
+                        <h2>Formulaire de Commande</h2>
+                        <span style="font-size: 11px; color: var(--text-muted);">Mise à jour en direct dans le volet droit</span>
+                    </div>
+
+                    <div class="form-body">
+
+                        <!-- Section 1 : En-tête & Informations -->
+                        <div class="form-section">
+                            <h3 class="form-section-title">1. Informations Générales</h3>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="inp-num">Numéro de Bon</label>
+                                    <input type="text" id="inp-num" class="form-input" placeholder="Ex: BCI-2026-0147" oninput="syncToDocument()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="inp-date">Date d'émission</label>
+                                    <input type="date" id="inp-date" class="form-input" onchange="syncToDocument()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="inp-requester">Demandeur</label>
+                                    <input type="text" id="inp-requester" class="form-input" placeholder="Ex: Marie Koumba" oninput="syncToDocument()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="inp-service">Service Demandeur</label>
+                                    <input type="text" id="inp-service" class="form-input" list="services-list" placeholder="Ex: Laboratoire, Urgences..." oninput="syncToDocument()">
+                                    <datalist id="services-list">
+                                        <option value="Laboratoire d'analyses médicales">
+                                        <option value="Logistique & Approvisionnement">
+                                        <option value="Pharmacie Centrale">
+                                        <option value="Urgences">
+                                        <option value="Maternité / Salle d'accouchement">
+                                        <option value="Bloc Opératoire">
+                                        <option value="Pédiatrie">
+                                        <option value="Services Généraux">
+                                    </datalist>
+                                </div>
+                                <div class="form-group">
+                                    <label for="inp-manager">Responsable</label>
+                                    <input type="text" id="inp-manager" class="form-input" placeholder="Ex: Dr. Paul M." oninput="syncToDocument()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="inp-delivery">Lieu de livraison</label>
+                                    <input type="text" id="inp-delivery" class="form-input" placeholder="Ex: Entrepôt principal, Labo central..." oninput="syncToDocument()">
+                                </div>
+                                <div class="form-group full-width">
+                                    <label for="inp-supplier">Fournisseur Suggéré</label>
+                                    <input type="text" id="inp-supplier" class="form-input" placeholder="Ex: Papeterie Centrale, Fournisseur Médical..." oninput="syncToDocument()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2 : Tableau dynamique des articles -->
+                        <div class="form-section">
+                            <h3 class="form-section-title">2. Articles Demandés</h3>
+                            
+                            <table class="edit-articles-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 48%;">Désignation</th>
+                                        <th style="width: 14%;">Qté</th>
+                                        <th style="width: 22%;">P.U (FCFA)</th>
+                                        <th style="width: 16%; text-align: right;">Total</th>
+                                        <th style="width: 28px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="edit-articles-tbody">
+                                    <!-- Lignes générées en JS -->
+                                </tbody>
+                            </table>
+
+                            <div class="articles-actions-bar">
+                                <button type="button" class="btn btn-outline-dark btn-sm" onclick="addNewArticleRow()">
+                                    + Ajouter un article
+                                </button>
+                                <div style="font-size: 13px; font-weight: 700; color: var(--primary);">
+                                    TOTAL : <span id="form-total-display">0</span> FCFA
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3 : Motif de la demande -->
+                        <div class="form-section">
+                            <h3 class="form-section-title">3. Motif de la Demande</h3>
+                            <div class="form-group">
+                                <textarea id="inp-motif" class="form-input" rows="2" placeholder="Précisez la justification du besoin (ex: Rupture de stock imminente, réapprovisionnement mensuel...)" oninput="syncToDocument()"></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="form-footer-actions">
+                        <button class="btn btn-primary" onclick="saveActiveOrder()">Enregistrer la commande</button>
+                        <button class="btn btn-dark" onclick="triggerPrint()">Imprimer la feuille A4</button>
+                    </div>
+                </div>
+
+                <!-- VOLET DROIT : APERÇU A4 EN DIRECT (Le document validé) -->
+                <div class="split-preview-pane">
+                    
+                    <div class="document-container" id="printable-doc">
+                        <!-- En-tête -->
+                        <header class="header">
+                            <div class="header-title">
+                                <h1>Bon de Commande<br>Interne</h1>
+                            </div>
+                            <div class="header-meta">
+                                <p><strong>N° :</strong> <span id="pv-num">BCI-2026-0147</span></p>
+                                <p><strong>Date :</strong> <span id="pv-date">09/10/2026</span></p>
+                            </div>
+                        </header>
+
+                        <!-- Informations sur la demande -->
+                        <section>
+                            <h2 class="section-title">Informations sur la demande</h2>
+                            <table class="info-table">
+                                <tr>
+                                    <td class="label">Demandeur</td>
+                                    <td class="value" id="pv-requester">Marie Koumba</td>
+                                    <td class="label">Service</td>
+                                    <td class="value" id="pv-service">Logistique</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Responsable</td>
+                                    <td class="value" id="pv-manager">Paul M.</td>
+                                    <td class="label">Lieu de livraison</td>
+                                    <td class="value" id="pv-delivery">Entrepôt principal</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Fournisseur suggéré</td>
+                                    <td class="value" colspan="3" id="pv-supplier">Papeterie Centrale</td>
+                                </tr>
+                            </table>
+                        </section>
+
+                        <!-- Articles demandés -->
+                        <section>
+                            <h2 class="section-title">Articles demandés</h2>
+                            <table class="articles-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 7%;">N°</th>
+                                        <th style="width: 45%;">Désignation</th>
+                                        <th style="width: 10%;">Qté</th>
+                                        <th style="width: 19%;">Prix unitaire (FCFA)</th>
+                                        <th style="width: 19%;">Total (FCFA)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pv-articles-tbody">
+                                    <!-- Lignes générées en temps réel -->
+                                </tbody>
+                            </table>
+                        </section>
+
+                        <!-- Motif de la demande -->
+                        <section>
+                            <h2 class="section-title">Motif de la demande</h2>
+                            <div class="motif-box" id="pv-motif">
+                                Réapprovisionnement trimestriel des fournitures de l'entrepôt (stock actuel sous le seuil minimal).
+                            </div>
+                        </section>
+
+                        <!-- Validations manuscrites (140px de haut) -->
+                        <section>
+                            <h2 class="section-title">Validations</h2>
+                            <table class="validations-table">
+                                <thead>
+                                    <tr>
+                                        <th>Demandeur</th>
+                                        <th>Responsable de service</th>
+                                        <th>Directeur financier</th>
+                                        <th>Directeur général</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div>Nom : <span id="pv-val-requester">Marie Koumba</span></div>
+                                            <div>Date : ___ / ___ / ______</div>
+                                            <div class="sig-label">Signature :</div>
+                                        </td>
+                                        <td>
+                                            <div>Nom : _________________</div>
+                                            <div>Date : ___ / ___ / ______</div>
+                                            <div class="sig-label">Signature :</div>
+                                        </td>
+                                        <td>
+                                            <div>Nom : _________________</div>
+                                            <div>Date : ___ / ___ / ______</div>
+                                            <div class="sig-label">Signature :</div>
+                                        </td>
+                                        <td>
+                                            <div>Nom : _________________</div>
+                                            <div>Date : ___ / ___ / ______</div>
+                                            <div class="sig-label">Signature :</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </section>
+
+                        <!-- Note de bas de page -->
+                        <footer class="footer-note">
+                            Document interne à usage exclusif de l'entreprise. Exemple fictif : noms, montants et références à titre d'illustration.
+                        </footer>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- =================================================================
+             VUE 2 : REGISTRE DES COMMANDES (CRUD)
+             ================================================================= -->
+        <section class="view-panel" id="view-registry">
+            <div class="registry-container">
+                <div class="registry-header">
+                    <div>
+                        <h2>Registre des Bons de Commande</h2>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+                            Gestion complète (CRUD) des commandes passées au sein de l'hôpital
+                        </p>
+                    </div>
+
+                    <div class="registry-search-bar">
+                        <input type="text" id="registry-search" class="search-input" placeholder="Rechercher par N°, Service ou Demandeur..." oninput="filterRegistry()">
+                        <button class="btn btn-dark" onclick="createNewOrderPrompt()">+ Nouveau Bon</button>
+                    </div>
+                </div>
+
+                <div class="registry-table-card">
+                    <table class="crud-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 14%;">N° de Bon</th>
+                                <th style="width: 12%;">Date</th>
+                                <th style="width: 22%;">Service Demandeur</th>
+                                <th style="width: 18%;">Demandeur</th>
+                                <th style="width: 10%; text-align: center;">Articles</th>
+                                <th style="width: 12%; text-align: right;">Total (FCFA)</th>
+                                <th style="width: 12%; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="registry-tbody">
+                            <!-- Rendu dynamique des bons -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast-msg">Opération effectuée avec succès</div>
+
+    <!-- Script logique de l'application -->
+    <script src="app.js"></script>
+</body>
+</html>
