@@ -549,7 +549,8 @@ function updateEditorHeader() {
     const pillElem = document.getElementById("editor-current-status-pill");
 
     if (titleElem) {
-        titleElem.innerText = `${activeOrder.numero_bc || 'Nouveau Bon'} • ${activeOrder.service || (currentUser ? currentUser.service : '')}`;
+        const servText = activeOrder.service ? ` • ${activeOrder.service}` : '';
+        titleElem.innerText = `${activeOrder.numero_bc || 'Nouveau Bon'}${servText}`;
     }
 
     if (pillElem) {
@@ -731,7 +732,7 @@ async function loadOrderIntoForm(orderData) {
     document.getElementById("inp-num").value = activeOrder.numero_bc || activeOrder.id || "";
     document.getElementById("inp-date").value = activeOrder.date_emission || activeOrder.date || new Date().toISOString().split("T")[0];
     document.getElementById("inp-requester").value = activeOrder.demandeur || activeOrder.requester || "";
-    document.getElementById("inp-service").value = activeOrder.service || (currentUser ? currentUser.service : "");
+    document.getElementById("inp-service").value = activeOrder.service || "";
     document.getElementById("inp-manager").value = activeOrder.responsable || activeOrder.manager || "";
     document.getElementById("inp-delivery").value = activeOrder.lieu_livraison || activeOrder.delivery || "Entrepôt principal";
     document.getElementById("inp-supplier").value = activeOrder.fournisseur || activeOrder.supplier || "";
@@ -873,7 +874,7 @@ function syncToDocument() {
     const num = document.getElementById("inp-num").value || "BCI-2026-0001";
     const dateVal = document.getElementById("inp-date").value || new Date().toISOString().split("T")[0];
     const requester = document.getElementById("inp-requester").value || "-";
-    const service = document.getElementById("inp-service").value || "-";
+    const service = (document.getElementById("inp-service").value || "").trim();
     const manager = document.getElementById("inp-manager").value || "-";
     const delivery = document.getElementById("inp-delivery").value || "-";
     const supplier = document.getElementById("inp-supplier").value || "-";
@@ -893,7 +894,7 @@ function syncToDocument() {
     document.getElementById("pv-num").innerText = num;
     document.getElementById("pv-date").innerText = formattedDate;
     document.getElementById("pv-requester").innerText = requester;
-    document.getElementById("pv-service").innerText = service;
+    document.getElementById("pv-service").innerText = service || "____________________";
     document.getElementById("pv-manager").innerText = manager;
     document.getElementById("pv-delivery").innerText = delivery;
     document.getElementById("pv-supplier").innerText = supplier;
@@ -1000,7 +1001,7 @@ async function performSave(targetStatut) {
     const payload = {
         numero_bc: document.getElementById("inp-num").value.trim(),
         date_emission: document.getElementById("inp-date").value,
-        service: service || (currentUser ? currentUser.service : "Service"),
+        service: service || "",
         demandeur: demandeur || (currentUser ? currentUser.nom_complet : "En cours"),
         responsable: document.getElementById("inp-manager").value.trim(),
         lieu_livraison: document.getElementById("inp-delivery").value.trim(),
@@ -1164,7 +1165,7 @@ async function createNewOrderPrompt() {
         numero_bc: nextNum,
         date_emission: today,
         demandeur: currentUser ? currentUser.nom_complet : "",
-        service: currentUser ? currentUser.service : "",
+        service: "",
         responsable: "",
         lieu_livraison: "Entrepôt principal",
         fournisseur: "",
