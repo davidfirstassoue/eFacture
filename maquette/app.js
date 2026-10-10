@@ -268,6 +268,19 @@ function showLoginModal() {
         modal.style.opacity = "1";
         modal.style.pointerEvents = "auto";
     }
+
+    // Réinitialiser le champ mot de passe en mode masqué par défaut
+    const passwordInput = document.getElementById("login-password");
+    const btn = document.getElementById("btn-toggle-password");
+    if (passwordInput && btn) {
+        passwordInput.setAttribute("type", "password");
+        const eyeOpen = btn.querySelector(".icon-eye-open");
+        const eyeClosed = btn.querySelector(".icon-eye-closed");
+        if (eyeOpen) eyeOpen.style.display = "block";
+        if (eyeClosed) eyeClosed.style.display = "none";
+        btn.setAttribute("title", "Afficher le mot de passe");
+        btn.setAttribute("aria-label", "Afficher le mot de passe");
+    }
 }
 
 function hideLoginModal() {
@@ -279,6 +292,31 @@ function hideLoginModal() {
         modal.style.opacity = "0";
         modal.style.pointerEvents = "none";
     }
+}
+
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById("login-password");
+    const btn = document.getElementById("btn-toggle-password");
+    if (!passwordInput || !btn) return;
+
+    const eyeOpen = btn.querySelector(".icon-eye-open");
+    const eyeClosed = btn.querySelector(".icon-eye-closed");
+
+    const isPassword = passwordInput.getAttribute("type") === "password";
+    if (isPassword) {
+        passwordInput.setAttribute("type", "text");
+        if (eyeOpen) eyeOpen.style.display = "none";
+        if (eyeClosed) eyeClosed.style.display = "block";
+        btn.setAttribute("title", "Masquer le mot de passe");
+        btn.setAttribute("aria-label", "Masquer le mot de passe");
+    } else {
+        passwordInput.setAttribute("type", "password");
+        if (eyeOpen) eyeOpen.style.display = "block";
+        if (eyeClosed) eyeClosed.style.display = "none";
+        btn.setAttribute("title", "Afficher le mot de passe");
+        btn.setAttribute("aria-label", "Afficher le mot de passe");
+    }
+    passwordInput.focus();
 }
 
 async function handleLoginSubmit(event) {

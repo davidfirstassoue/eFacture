@@ -194,6 +194,44 @@ html.show-login .login-fullscreen-screen,
     box-shadow: 0 0 0 3px rgba(24, 78, 136, 0.18);
 }
 
+.login-password-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.login-password-group .login-modern-input {
+    padding-right: 48px;
+}
+
+.btn-toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    border-radius: 6px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-toggle-password:hover {
+    color: #0f2b48;
+    background-color: rgba(15, 43, 72, 0.08);
+}
+
+.btn-toggle-password svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
 .login-error-alert {
     background: #fee2e2;
     color: #b91c1c;
