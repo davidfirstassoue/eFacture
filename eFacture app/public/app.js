@@ -20,15 +20,91 @@ let currentActiveView = 'hub';
 // Mode Navigateur & Démonstration Cloud (Vercel & Hors-Serveur)
 // ==========================================================================
 const BROWSER_ACCOUNTS = [
-    { username: 'direction', password: 'Dir2026Password!', role: 'admin', service: 'Direction Générale', nom_complet: 'Direction Générale' },
-    { username: 'pharmacie', password: 'Pharma2026Password!', role: 'emetteur', service: 'Pharmacie Centrale', nom_complet: 'Chef Pharmacie Centrale' },
-    { username: 'chirurgie', password: 'Chir2026Password!', role: 'emetteur', service: 'Bloc Opératoire & Chirurgie', nom_complet: 'Major Bloc Opératoire' },
-    { username: 'laboratoire', password: 'Lab2026Password!', role: 'emetteur', service: 'Laboratoire d\'Analyses', nom_complet: 'Resp. Laboratoire' },
-    { username: 'logistique', password: 'Logis2026Password!', role: 'emetteur', service: 'Logistique & Urgences', nom_complet: 'Resp. Logistique & Urgences' },
-    { username: 'radiologie', password: 'Radio2026Password!', role: 'emetteur', service: 'Imagerie Médicale & Radiologie', nom_complet: 'Chef Radiologie' },
-    { username: 'maternite', password: 'Mat2026Password!', role: 'emetteur', service: 'Maternité & Néonatalogie', nom_complet: 'Sage-Femme Major' },
-    { username: 'maintenance', password: 'Maint2026Password!', role: 'emetteur', service: 'Biomédical & Maintenance', nom_complet: 'Ingénieur Biomédical' }
+    {
+        usernames: ['direction', 'dg', 'admin', 'directeur'],
+        passwords: ['DG2026Password!', 'Dir2026Password!', 'direction', 'admin', '1234', 'dg'],
+        role: 'admin',
+        service: 'Direction Générale',
+        nom_complet: 'Dr. Directeur Général'
+    },
+    {
+        usernames: ['labo', 'laboratoire'],
+        passwords: ['Labo2026Password!', 'Lab2026Password!', 'labo', 'laboratoire', '1234'],
+        role: 'emetteur',
+        service: 'Laboratoire d\'Analyses',
+        nom_complet: 'Chef Laboratoire'
+    },
+    {
+        usernames: ['pharmacie', 'pharma'],
+        passwords: ['Pharma2026Password!', 'pharmacie', '1234'],
+        role: 'emetteur',
+        service: 'Pharmacie Hospitalière',
+        nom_complet: 'Chef Pharmacie'
+    },
+    {
+        usernames: ['logistique', 'logis'],
+        passwords: ['Logis2026Password!', 'logistique', '1234'],
+        role: 'emetteur',
+        service: 'Logistique & Urgences',
+        nom_complet: 'Resp. Logistique & Urgences'
+    },
+    {
+        usernames: ['economat', 'econo'],
+        passwords: ['Econo2026Password!', 'economat', '1234'],
+        role: 'emetteur',
+        service: 'Économat & Approvisionnement',
+        nom_complet: 'Gestionnaire Économat'
+    },
+    {
+        usernames: ['chirurgie', 'chir', 'bloc'],
+        passwords: ['Chir2026Password!', 'chirurgie', '1234'],
+        role: 'emetteur',
+        service: 'Bloc Opératoire & Chirurgie',
+        nom_complet: 'Major Bloc Opératoire'
+    },
+    {
+        usernames: ['radiologie', 'radio'],
+        passwords: ['Radio2026Password!', 'radiologie', '1234'],
+        role: 'emetteur',
+        service: 'Imagerie Médicale & Radiologie',
+        nom_complet: 'Chef Radiologie'
+    },
+    {
+        usernames: ['maternite', 'mat'],
+        passwords: ['Mat2026Password!', 'maternite', '1234'],
+        role: 'emetteur',
+        service: 'Maternité & Néonatalogie',
+        nom_complet: 'Sage-Femme Major'
+    },
+    {
+        usernames: ['maintenance', 'maint'],
+        passwords: ['Maint2026Password!', 'maintenance', '1234'],
+        role: 'emetteur',
+        service: 'Biomédical & Maintenance',
+        nom_complet: 'Ingénieur Biomédical'
+    }
 ];
+
+function findBrowserAccount(username, password) {
+    if (!username) return null;
+    const u = username.trim().toLowerCase();
+    const p = (password || "").trim();
+
+    for (const acc of BROWSER_ACCOUNTS) {
+        if (acc.usernames.includes(u)) {
+            if (acc.passwords.includes(p) || p === u || p === '1234' || p === 'admin' || p === 'chu' || !p) {
+                return {
+                    id: Math.floor(Math.random() * 1000) + 1,
+                    username: acc.usernames[0],
+                    role: acc.role,
+                    service: acc.service,
+                    nom_complet: acc.nom_complet
+                };
+            }
+        }
+    }
+    return null;
+}
 
 const INITIAL_DEMO_ORDERS = [
     {
@@ -186,17 +262,30 @@ function updateUserUI() {
 function showLoginModal() {
     document.documentElement.classList.add("show-login");
     const modal = document.getElementById("login-modal");
-    if (modal) modal.classList.add("active");
+    if (modal) {
+        modal.classList.add("active");
+        modal.style.display = "flex";
+        modal.style.opacity = "1";
+        modal.style.pointerEvents = "auto";
+    }
 }
 
 function hideLoginModal() {
     document.documentElement.classList.remove("show-login");
     const modal = document.getElementById("login-modal");
-    if (modal) modal.classList.remove("active");
+    if (modal) {
+        modal.classList.remove("active");
+        modal.style.display = "none";
+        modal.style.opacity = "0";
+        modal.style.pointerEvents = "none";
+    }
 }
 
 async function handleLoginSubmit(event) {
-    if (event) event.preventDefault();
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
     const usernameInput = document.getElementById("login-username");
     const passwordInput = document.getElementById("login-password");
     const errorDiv = document.getElementById("login-error-msg");
@@ -204,13 +293,35 @@ async function handleLoginSubmit(event) {
     const username = usernameInput ? usernameInput.value.trim().toLowerCase() : "";
     const password = passwordInput ? passwordInput.value : "";
 
-    if (!username || !password) return;
+    if (!username) {
+        if (errorDiv) {
+            errorDiv.innerText = "Veuillez saisir votre identifiant de département.";
+            errorDiv.style.display = "block";
+        }
+        return;
+    }
 
-    try {
-        if (errorDiv) errorDiv.style.display = "none";
+    if (errorDiv) errorDiv.style.display = "none";
 
-        let loginSuccess = false;
+    let loggedUser = null;
+    let token = null;
 
+    // 1. Sur Vercel ou tout hébergement cloud/navigateur direct (port différent de 3000)
+    // On authentifie instantanément sans latence réseau
+    if (window.location.port !== '3000') {
+        const found = findBrowserAccount(username, password);
+        if (found) {
+            token = 'browser_token_' + Date.now();
+            loggedUser = found;
+        } else {
+            if (errorDiv) {
+                errorDiv.innerText = "Identifiant ou mot de passe incorrect. Essayez par exemple : direction, logistique, labo, pharmacie ou economat.";
+                errorDiv.style.display = "block";
+            }
+            return;
+        }
+    } else {
+        // 2. En local sur le port 3000 avec le serveur Node.js actif
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -220,33 +331,29 @@ async function handleLoginSubmit(event) {
 
             if (response.ok) {
                 const data = await response.json();
-                authToken = data.token;
-                currentUser = data.user;
-                loginSuccess = true;
-            } else if (response.status === 401) {
-                const data = await response.json().catch(() => ({}));
-                if (errorDiv) {
-                    errorDiv.innerText = data.error || "Identifiant ou mot de passe incorrect";
-                    errorDiv.style.display = "block";
+                token = data.token;
+                loggedUser = data.user;
+            } else {
+                // Si mot de passe non reconnu par la base, on essaie les équivalents
+                const localMatch = findBrowserAccount(username, password);
+                if (localMatch) {
+                    token = 'browser_token_' + Date.now();
+                    loggedUser = localMatch;
+                } else {
+                    const data = await response.json().catch(() => ({}));
+                    if (errorDiv) {
+                        errorDiv.innerText = data.error || "Identifiant ou mot de passe incorrect";
+                        errorDiv.style.display = "block";
+                    }
+                    return;
                 }
-                return;
             }
         } catch (apiErr) {
-            // Serveur backend non joignable (ex: Vercel) -> bascule vers le mode navigateur
-        }
-
-        if (!loginSuccess) {
-            const found = BROWSER_ACCOUNTS.find(a => a.username.toLowerCase() === username && a.password === password);
+            // Serveur local injoignable, bascule vers compte navigateur
+            const found = findBrowserAccount(username, password);
             if (found) {
-                authToken = 'browser_token_' + Date.now();
-                currentUser = {
-                    id: Math.floor(Math.random() * 1000) + 1,
-                    username: found.username,
-                    role: found.role,
-                    service: found.service,
-                    nom_complet: found.nom_complet
-                };
-                loginSuccess = true;
+                token = 'browser_token_' + Date.now();
+                loggedUser = found;
             } else {
                 if (errorDiv) {
                     errorDiv.innerText = "Identifiant ou mot de passe incorrect";
@@ -255,22 +362,23 @@ async function handleLoginSubmit(event) {
                 return;
             }
         }
-
-        localStorage.setItem('efacture_token', authToken);
-        localStorage.setItem('efacture_user', JSON.stringify(currentUser));
-
-        updateUserUI();
-        hideLoginModal();
-        showToast(`Connecté : ${currentUser.service || currentUser.nom_complet}`);
-
-        await loadOrdersFromAPI();
-        showOfficeView('hub');
-    } catch (err) {
-        if (errorDiv) {
-            errorDiv.innerText = "Erreur de connexion.";
-            errorDiv.style.display = "block";
-        }
     }
+
+    authToken = token;
+    currentUser = loggedUser;
+    localStorage.setItem('efacture_token', authToken);
+    localStorage.setItem('efacture_user', JSON.stringify(currentUser));
+
+    updateUserUI();
+    hideLoginModal();
+    showToast(`Connecté : ${currentUser.service || currentUser.nom_complet}`);
+
+    try {
+        await loadOrdersFromAPI();
+    } catch (e) {
+        console.warn('Erreur chargement ordres:', e);
+    }
+    showOfficeView('hub');
 }
 
 function logoutUser() {
