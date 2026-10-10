@@ -3,3 +3,9 @@ Thumbs.db
 node_modules/
 .vscode/
 .idea/
+
+# Binaires volumineux & fichiers temporaires SQLite
+node.exe
+*.db-wal
+*.db-shm
+*.log
