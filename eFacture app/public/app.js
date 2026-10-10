@@ -17,6 +17,75 @@ let currentHubFilter = 'ALL';
 let currentActiveView = 'hub';
 
 // ==========================================================================
+// Mode Navigateur & Démonstration Cloud (Vercel & Hors-Serveur)
+// ==========================================================================
+const BROWSER_ACCOUNTS = [
+    { username: 'direction', password: 'Dir2026Password!', role: 'admin', service: 'Direction Générale', nom_complet: 'Direction Générale' },
+    { username: 'pharmacie', password: 'Pharma2026Password!', role: 'emetteur', service: 'Pharmacie Centrale', nom_complet: 'Chef Pharmacie Centrale' },
+    { username: 'chirurgie', password: 'Chir2026Password!', role: 'emetteur', service: 'Bloc Opératoire & Chirurgie', nom_complet: 'Major Bloc Opératoire' },
+    { username: 'laboratoire', password: 'Lab2026Password!', role: 'emetteur', service: 'Laboratoire d\'Analyses', nom_complet: 'Resp. Laboratoire' },
+    { username: 'logistique', password: 'Logis2026Password!', role: 'emetteur', service: 'Logistique & Urgences', nom_complet: 'Resp. Logistique & Urgences' },
+    { username: 'radiologie', password: 'Radio2026Password!', role: 'emetteur', service: 'Imagerie Médicale & Radiologie', nom_complet: 'Chef Radiologie' },
+    { username: 'maternite', password: 'Mat2026Password!', role: 'emetteur', service: 'Maternité & Néonatalogie', nom_complet: 'Sage-Femme Major' },
+    { username: 'maintenance', password: 'Maint2026Password!', role: 'emetteur', service: 'Biomédical & Maintenance', nom_complet: 'Ingénieur Biomédical' }
+];
+
+const INITIAL_DEMO_ORDERS = [
+    {
+        id: 1,
+        numero_bc: 'BCI-2026-0001',
+        date_emission: '2026-10-09',
+        service: 'Bloc Opératoire & Chirurgie',
+        demandeur: 'Dr. MINTSA (Chirurgien Chef)',
+        responsable: 'Major Bloc Opératoire',
+        lieu_livraison: 'Pharmacie Centrale - CHU Owendo',
+        fournisseur: 'Centrale d\'Achat Pharmaceutique',
+        motif: 'Réapprovisionnement d\'urgence pour les interventions du week-end.',
+        total_ht: 385000,
+        total_ttc: 385000,
+        statut: 'FINALISE',
+        created_at: '2026-10-09 10:00:00',
+        items: [
+            { designation: 'Boîtes de gants stériles T7.5 (lot de 50)', qty: 20, price: 12500 },
+            { designation: 'Poches sérum physiologique 500ml', qty: 50, price: 1500 },
+            { designation: 'Compresses stériles 10x10 (paquets de 100)', qty: 30, price: 2000 }
+        ]
+    },
+    {
+        id: 2,
+        numero_bc: 'BCI-2026-0002',
+        date_emission: '2026-10-10',
+        service: 'Logistique & Urgences',
+        demandeur: 'M. ONDO (Logistique)',
+        responsable: 'Chef de Service Urgences',
+        lieu_livraison: 'Magasin Général - CHU Owendo',
+        fournisseur: 'Fournisseur Médical Gabonais',
+        motif: 'Dotation hebdomadaire pour les salles de soins d\'urgences.',
+        total_ht: 185000,
+        total_ttc: 185000,
+        statut: 'BROUILLON',
+        created_at: '2026-10-10 08:30:00',
+        items: [
+            { designation: 'Kits de suture à usage unique', qty: 15, price: 7000 },
+            { designation: 'Flacons Bétadine dermique 500ml', qty: 16, price: 5000 }
+        ]
+    }
+];
+
+function getBrowserOrders() {
+    try {
+        const stored = localStorage.getItem('efacture_browser_orders');
+        if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    localStorage.setItem('efacture_browser_orders', JSON.stringify(INITIAL_DEMO_ORDERS));
+    return JSON.parse(JSON.stringify(INITIAL_DEMO_ORDERS));
+}
+
+function saveBrowserOrders(orders) {
+    localStorage.setItem('efacture_browser_orders', JSON.stringify(orders));
+}
+
+// ==========================================================================
 // 1. Initialisation & Cycle de Vie
 // ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
@@ -47,21 +116,37 @@ async function initAuth() {
     }
 
     try {
-        const response = await fetch('/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        });
+        let authValidated = false;
+        try {
+            const response = await fetch('/api/auth/me', {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
 
-        if (!response.ok) {
-            throw new Error('Session expirée');
+            if (response.ok) {
+                const data = await response.json();
+                currentUser = data.user;
+                localStorage.setItem('efacture_user', JSON.stringify(currentUser));
+                authValidated = true;
+            } else if (response.status === 401 || response.status === 403) {
+                throw new Error('Session expirée');
+            }
+        } catch (fetchErr) {
+            if (fetchErr.message === 'Session expirée') throw fetchErr;
         }
 
-        const data = await response.json();
-        currentUser = data.user;
-        localStorage.setItem('efacture_user', JSON.stringify(currentUser));
-        updateUserUI();
-        hideLoginModal();
-        await loadOrdersFromAPI();
-        showOfficeView('hub');
+        // Si Vercel ou serveur non joignable mais session en cache valide
+        if (!authValidated && currentUser) {
+            authValidated = true;
+        }
+
+        if (authValidated) {
+            updateUserUI();
+            hideLoginModal();
+            await loadOrdersFromAPI();
+            showOfficeView('hub');
+        } else {
+            throw new Error('Session non valide');
+        }
     } catch (err) {
         console.warn('Session non valide, réinitialisation:', err);
         localStorage.removeItem('efacture_token');
@@ -116,7 +201,7 @@ async function handleLoginSubmit(event) {
     const passwordInput = document.getElementById("login-password");
     const errorDiv = document.getElementById("login-error-msg");
 
-    const username = usernameInput ? usernameInput.value.trim() : "";
+    const username = usernameInput ? usernameInput.value.trim().toLowerCase() : "";
     const password = passwordInput ? passwordInput.value : "";
 
     if (!username || !password) return;
@@ -124,24 +209,53 @@ async function handleLoginSubmit(event) {
     try {
         if (errorDiv) errorDiv.style.display = "none";
 
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
+        let loginSuccess = false;
 
-        const data = await response.json();
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
 
-        if (!response.ok) {
-            if (errorDiv) {
-                errorDiv.innerText = data.error || "Identifiant ou mot de passe incorrect";
-                errorDiv.style.display = "block";
+            if (response.ok) {
+                const data = await response.json();
+                authToken = data.token;
+                currentUser = data.user;
+                loginSuccess = true;
+            } else if (response.status === 401) {
+                const data = await response.json().catch(() => ({}));
+                if (errorDiv) {
+                    errorDiv.innerText = data.error || "Identifiant ou mot de passe incorrect";
+                    errorDiv.style.display = "block";
+                }
+                return;
             }
-            return;
+        } catch (apiErr) {
+            // Serveur backend non joignable (ex: Vercel) -> bascule vers le mode navigateur
         }
 
-        authToken = data.token;
-        currentUser = data.user;
+        if (!loginSuccess) {
+            const found = BROWSER_ACCOUNTS.find(a => a.username.toLowerCase() === username && a.password === password);
+            if (found) {
+                authToken = 'browser_token_' + Date.now();
+                currentUser = {
+                    id: Math.floor(Math.random() * 1000) + 1,
+                    username: found.username,
+                    role: found.role,
+                    service: found.service,
+                    nom_complet: found.nom_complet
+                };
+                loginSuccess = true;
+            } else {
+                if (errorDiv) {
+                    errorDiv.innerText = "Identifiant ou mot de passe incorrect";
+                    errorDiv.style.display = "block";
+                }
+                return;
+            }
+        }
+
         localStorage.setItem('efacture_token', authToken);
         localStorage.setItem('efacture_user', JSON.stringify(currentUser));
 
@@ -153,7 +267,7 @@ async function handleLoginSubmit(event) {
         showOfficeView('hub');
     } catch (err) {
         if (errorDiv) {
-            errorDiv.innerText = "Impossible de joindre le serveur local.";
+            errorDiv.innerText = "Erreur de connexion.";
             errorDiv.style.display = "block";
         }
     }
@@ -169,20 +283,28 @@ function logoutUser() {
 }
 
 // ==========================================================================
-// 3. Chargement et Synchronisation SQLite
+// 3. Chargement et Synchronisation SQLite & Navigateur
 // ==========================================================================
 async function loadOrdersFromAPI() {
     if (!authToken) return;
 
     try {
-        const response = await fetch('/api/orders', {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        });
+        let loaded = false;
+        try {
+            const response = await fetch('/api/orders', {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
 
-        if (!response.ok) throw new Error('Erreur API');
+            if (response.ok) {
+                const data = await response.json();
+                cachedOrders = data.orders || [];
+                loaded = true;
+            }
+        } catch (err) {}
 
-        const data = await response.json();
-        cachedOrders = data.orders || [];
+        if (!loaded) {
+            cachedOrders = getBrowserOrders();
+        }
 
         updateCounters();
         renderHubOrders();
@@ -198,7 +320,6 @@ async function loadOrdersFromAPI() {
         }
     } catch (err) {
         console.error('Erreur chargement orders:', err);
-        showToast("Erreur de synchronisation avec la base locale");
     }
 }
 
@@ -751,33 +872,61 @@ async function performSave(targetStatut) {
     };
 
     try {
-        let res;
-        if (activeOrder.id && !String(activeOrder.id).startsWith("BCI-")) {
-            res = await fetch(`/api/orders/${activeOrder.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                },
-                body: JSON.stringify(payload)
-            });
-        } else {
-            res = await fetch('/api/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                },
-                body: JSON.stringify(payload)
-            });
+        let savedSuccessfully = false;
+        try {
+            let res;
+            if (activeOrder.id && !String(activeOrder.id).startsWith("BCI-")) {
+                res = await fetch(`/api/orders/${activeOrder.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                res = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            if (res && res.ok) {
+                const data = await res.json();
+                if (data.orderId) activeOrder.id = data.orderId;
+                savedSuccessfully = true;
+            }
+        } catch (apiErr) {}
+
+        // Fallback Navigateur (Vercel ou hors-serveur)
+        if (!savedSuccessfully) {
+            const bOrders = getBrowserOrders();
+            const existingIdx = bOrders.findIndex(o => o.numero_bc === payload.numero_bc || o.id === activeOrder.id);
+
+            const record = {
+                ...payload,
+                id: activeOrder.id && !String(activeOrder.id).startsWith("BCI-") ? activeOrder.id : Date.now(),
+                created_at: new Date().toISOString().replace("T", " ").substring(0, 19),
+                items: activeOrder.items.map(it => ({
+                    designation: it.designation,
+                    qty: it.qty,
+                    price: it.price
+                }))
+            };
+
+            if (existingIdx >= 0) {
+                bOrders[existingIdx] = record;
+            } else {
+                bOrders.unshift(record);
+            }
+            saveBrowserOrders(bOrders);
+            activeOrder.id = record.id;
         }
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Erreur enregistrement');
-
-        if (data.orderId) {
-            activeOrder.id = data.orderId;
-        }
         activeOrder.statut = targetStatut;
 
         const msg = targetStatut === 'BROUILLON' 
@@ -804,19 +953,25 @@ async function deleteOrder(orderId) {
     }
 
     try {
-        const res = await fetch(`/api/orders/${orderId}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        });
+        let deletedOnApi = false;
+        try {
+            const res = await fetch(`/api/orders/${orderId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (res && res.ok) deletedOnApi = true;
+        } catch (apiErr) {}
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        if (!deletedOnApi) {
+            const bOrders = getBrowserOrders().filter(o => o.id !== orderId && o.numero_bc !== orderId);
+            saveBrowserOrders(bOrders);
+        }
 
-        showToast(`Bon ${num} supprimé de la base SQLite`);
+        showToast(`Bon ${num} supprimé`);
         await loadOrdersFromAPI();
 
         // Si c'était le bon actuellement affiché dans l'éditeur, revenir au hub
-        if (activeOrder && activeOrder.id === orderId) {
+        if (activeOrder && (activeOrder.id === orderId || activeOrder.numero_bc === orderId)) {
             activeOrder = null;
             showOfficeView('hub');
         }
@@ -1021,9 +1176,29 @@ function downloadDatabaseBackup() {
         showLoginModal();
         return;
     }
-    const downloadUrl = `/api/system/backup?token=${encodeURIComponent(authToken)}`;
-    window.location.href = downloadUrl;
-    showToast("Téléchargement de la sauvegarde SQLite en cours...");
+
+    if (window.location.port === '3000') {
+        const downloadUrl = `/api/system/backup?token=${encodeURIComponent(authToken)}`;
+        window.location.href = downloadUrl;
+        showToast("Téléchargement de la sauvegarde SQLite en cours...");
+        return;
+    }
+
+    // Sur Vercel ou en mode navigateur : téléchargement d'un export JSON complet
+    const orders = getBrowserOrders();
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+        source: "CHU Owendo - Bons de Commande Internes",
+        export_date: new Date().toISOString(),
+        total_bons: orders.length,
+        commandes: orders
+    }, null, 2));
+    const dlAnchor = document.createElement('a');
+    dlAnchor.setAttribute("href", dataStr);
+    dlAnchor.setAttribute("download", `BCI_CHU_Owendo_Sauvegarde_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(dlAnchor);
+    dlAnchor.click();
+    dlAnchor.remove();
+    showToast("Sauvegarde exportée avec succès");
 }
 
 function triggerPrint() {

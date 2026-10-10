@@ -3,344 +3,638 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Bons de Commande Internes - Hôpital</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Bons de Commande Internes - CHU d'Owendo</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/logo.png">
+    <link rel="stylesheet" href="style.css?v=2">
+    <script>
+        // Détection synchrone de session pour supprimer tout flash visuel au rechargement
+        if (!localStorage.getItem('efacture_token')) {
+            document.documentElement.classList.add('show-login');
+        }
+    </script>
 </head>
 <body>
 
-    <!-- Barre de Navigation Supérieure -->
-    <header class="navbar">
-        <div class="nav-brand">
-            <span class="brand-badge">HÔPITAL</span>
-            <h1>Bons de Commande Internes</h1>
-        </div>
+    <!-- =====================================================================
+         1. ÉCRAN DE CONNEXION PLEIN ÉCRAN (Photo CHU Owendo & Carte Épurée)
+         ===================================================================== -->
+    <div class="login-fullscreen-screen" id="login-modal">
+        <!-- Bannière Supérieure Officielle CHU Owendo -->
+        <header class="login-header-banner">
+            <div class="login-header-left">
+                <img src="logo.png" alt="CHU Owendo" class="login-banner-logo">
+            </div>
+            <div class="login-header-right">
+                <div class="login-header-meta">
+                    <span class="login-app-title">Portail des Bons de Commande Internes (BCI)</span>
+                </div>
+            </div>
+        </header>
 
-        <nav class="nav-tabs">
-            <button class="nav-tab-btn active" id="tab-editor" onclick="switchTab('editor')">
-                Saisie & Aperçu Direct
-            </button>
-            <button class="nav-tab-btn" id="tab-registry" onclick="switchTab('registry')">
-                Registre des Bons <span class="tab-counter" id="badge-total-orders">2</span>
-            </button>
-        </nav>
-
-        <div class="nav-actions">
-            <button class="btn btn-outline" onclick="createNewOrderPrompt()">+ Nouveau</button>
-            <button class="btn btn-primary" onclick="saveActiveOrder()">Enregistrer</button>
-            <button class="btn btn-dark" onclick="triggerPrint()">Imprimer A4</button>
-        </div>
-    </header>
-
-    <!-- Conteneur Principal des Vues -->
-    <main class="main-content">
-
-        <!-- =================================================================
-             VUE 1 : SPLIT-SCREEN (Saisie à gauche / Document A4 à droite)
-             ================================================================= -->
-        <section class="view-panel active" id="view-editor">
-            <div class="split-screen">
-
-                <!-- VOLET GAUCHE : FORMULAIRE DE SAISIE -->
-                <div class="split-form-pane">
-                    <div class="form-header-bar">
-                        <h2>Formulaire de Commande</h2>
-                        <span style="font-size: 11px; color: var(--text-muted);">Mise à jour en direct dans le volet droit</span>
+        <!-- Fond avec la Photo Réelle du CHU Owendo et Carte Centrale -->
+        <div class="login-backdrop-container">
+            <div class="login-card-container">
+                <div class="login-card-inner">
+                    
+                    <!-- Icône Avatar Utilisateur (SVG épuré) -->
+                    <div class="login-avatar-circle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="7" r="4.5" />
+                            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+                        </svg>
                     </div>
 
-                    <div class="form-body">
+                    <!-- Formulaire de Connexion -->
+                    <form id="login-form" onsubmit="handleLoginSubmit(event)" class="login-form-body">
+                        <div class="login-input-group">
+                            <input type="text" id="login-username" class="login-modern-input" placeholder="Nom d'utilisateur" required autofocus autocomplete="username">
+                        </div>
+                        <div class="login-input-group">
+                            <input type="password" id="login-password" class="login-modern-input" placeholder="Mot de passe" required autocomplete="current-password">
+                        </div>
 
-                        <!-- Section 1 : En-tête & Informations -->
-                        <div class="form-section">
-                            <h3 class="form-section-title">1. Informations Générales</h3>
-                            <div class="form-grid-2">
-                                <div class="form-group">
-                                    <label for="inp-num" style="display: flex; justify-content: space-between;">
-                                        <span>Numéro de Bon</span>
-                                        <span style="font-size: 10px; color: var(--primary); font-weight: 600;">(Auto)</span>
-                                    </label>
-                                    <div style="display: flex; gap: 4px;">
-                                        <input type="text" id="inp-num" class="form-input" style="flex: 1;" placeholder="Ex: BCI-2026-0147" oninput="syncToDocument()">
-                                        <button type="button" class="btn btn-outline-dark btn-sm" title="Générer un numéro automatique suivant" onclick="generateAutoNumber()">Auto N°</button>
+                        <div id="login-error-msg" class="login-error-alert" style="display: none;"></div>
+
+                        <button type="submit" class="login-submit-btn">
+                            Connexion
+                        </button>
+                    </form>
+
+                    <div class="login-footer-security">
+                        Centre Hospitalier Universitaire d'Owendo
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =====================================================================
+         2. INTERFACE PRINCIPALE DE L'APPLICATION (Style Microsoft Office)
+         ===================================================================== -->
+    <div class="app-layout" id="app-layout">
+
+        <!-- Volet Latéral Gauche (Navigation Office Backstage) -->
+        <aside class="office-sidebar" id="office-sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-brand">
+                    <img src="logo.png" alt="CHU d'Owendo" class="sidebar-logo-img">
+                </div>
+
+                <!-- Menu de Navigation Principal Simple -->
+                <nav class="sidebar-menu">
+                    <button class="sidebar-nav-btn active" id="side-nav-hub" onclick="showOfficeView('hub')">
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                        <span>Accueil</span>
+                    </button>
+
+                    <button class="sidebar-nav-btn" id="side-nav-new" onclick="createNewOrderPrompt()">
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Nouveau Bon</span>
+                    </button>
+
+                    <button class="sidebar-nav-btn" id="side-nav-registry" onclick="showOfficeView('registry')">
+                        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span>Registre des Bons</span>
+                        <span class="sidebar-pill-badge" id="badge-total-orders">0</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Pied de page Sidebar : Compte & Sauvegarde USB -->
+            <div class="sidebar-bottom">
+                <button class="sidebar-btn-backup" onclick="downloadDatabaseBackup()" title="Sauvegarder la base de données sur une clé USB">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sidebar-sm-icon">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    <span>Sauvegarde USB</span>
+                </button>
+
+                <div class="sidebar-user-card" id="user-profile-bar">
+                    <div class="sidebar-user-avatar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="7" r="4"/>
+                            <path d="M4 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"/>
+                        </svg>
+                    </div>
+                    <div class="sidebar-user-details">
+                        <span class="sidebar-user-name" id="user-display-name">Service</span>
+                        <span class="sidebar-user-service" id="user-display-service">CHU Owendo</span>
+                        <span class="role-tag" id="user-display-role">Émetteur</span>
+                    </div>
+                </div>
+
+                <button class="sidebar-btn-logout" onclick="logoutUser()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sidebar-sm-icon">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Déconnexion</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Espace de Travail Principal (Content Area) -->
+        <main class="office-workspace" id="office-workspace">
+
+            <!-- =============================================================
+                 VUE 1 : LE HUB ACCUEIL (Style Word/Office - Liste centrale)
+                 ============================================================= -->
+            <section class="office-view-panel active" id="view-hub">
+                <div class="hub-container">
+                    
+                    <!-- Salutation et En-tête -->
+                    <div class="hub-header-section">
+                        <div class="hub-greeting-box">
+                            <h1 class="hub-greeting-title" id="hub-greeting-text">Bonjour, Service</h1>
+                            <p class="hub-greeting-date" id="hub-greeting-date">Centre Hospitalier Universitaire d'Owendo</p>
+                        </div>
+                    </div>
+
+                    <!-- Carte Action : Créer un Bon de Commande Vierge -->
+                    <div class="hub-create-section">
+                        <h2 class="hub-section-label">Nouveau Document</h2>
+                        <div class="hub-template-grid">
+                            <div class="hub-action-card" onclick="createNewOrderPrompt()">
+                                <div class="hub-card-icon-box">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="12" y1="11" x2="12" y2="17"></line>
+                                        <line x1="9" y1="14" x2="15" y2="14"></line>
+                                    </svg>
+                                </div>
+                                <div class="hub-card-content">
+                                    <h3>Créer un Nouveau Bon de Commande</h3>
+                                    <p>Numérotation séquentielle automatique, calculs en FCFA et aperçu A4 officiel</p>
+                                </div>
+                                <div class="hub-card-arrow">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Liste des Bons de Commande (Bons récents, Brouillons en standby, Finalisés) -->
+                    <div class="hub-list-section">
+                        <div class="hub-list-header-bar">
+                            <div class="hub-list-tabs">
+                                <button class="hub-tab-btn active" id="hub-tab-all" onclick="filterHubStatus('ALL')">
+                                    <svg viewBox="0 0 24 24" class="tab-icon" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    </svg>
+                                    <span>Tous les Bons (<span id="hub-badge-all">0</span>)</span>
+                                </button>
+                                <button class="hub-tab-btn" id="hub-tab-draft" onclick="filterHubStatus('BROUILLON')">
+                                    <svg viewBox="0 0 24 24" class="tab-icon" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 20h9"></path>
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                    </svg>
+                                    <span>Brouillons / Standby</span>
+                                    <span class="tab-mini-badge warning" id="hub-badge-drafts">0</span>
+                                </button>
+                                <button class="hub-tab-btn" id="hub-tab-finalized" onclick="filterHubStatus('FINALISE')">
+                                    <svg viewBox="0 0 24 24" class="tab-icon" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    <span>Finalisés</span>
+                                    <span class="tab-mini-badge success" id="hub-badge-finalized">0</span>
+                                </button>
+                            </div>
+
+                            <!-- Barre de recherche réactive -->
+                            <div class="hub-search-box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <input type="text" id="hub-search-input" placeholder="Rechercher par N°, article, demandeur..." oninput="handleHubSearch()">
+                            </div>
+                        </div>
+
+                        <!-- Tableau de la liste façon Office Word avec icônes SVG strictes -->
+                        <div class="hub-documents-card">
+                            <table class="hub-doc-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 25%;">N° de Bon / Objet</th>
+                                        <th style="width: 18%;">Service & Demandeur</th>
+                                        <th style="width: 12%;">Date</th>
+                                        <th style="width: 15%; text-align: right;">Montant Total</th>
+                                        <th style="width: 13%; text-align: center;">Statut</th>
+                                        <th style="width: 17%; text-align: right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="hub-orders-tbody">
+                                    <!-- Rendu dynamique des documents -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+
+            <!-- =============================================================
+                 VUE 2 : MODE DOCUMENT / ÉDITEUR A4 SPLIT-SCREEN
+                 ============================================================= -->
+            <section class="office-view-panel" id="view-editor">
+                
+                <!-- Barre d'outils supérieure de l'éditeur ("Ribbon Document") -->
+                <header class="editor-top-ribbon">
+                    <div class="editor-ribbon-left">
+                        <button class="editor-btn-back" onclick="showOfficeView('hub')" title="Revenir à l'accueil et à la liste des commandes">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            <span>Accueil</span>
+                        </button>
+                        <button class="editor-btn-toggle-sidebar" id="btn-toggle-sidebar" onclick="toggleSidebarInEditor()" title="Afficher le volet latéral">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="3" x2="9" y2="21"></line>
+                            </svg>
+                            <span>Menu</span>
+                        </button>
+                        <div class="editor-doc-title-box">
+                            <span class="editor-doc-label">Édition du Bon</span>
+                            <span class="editor-doc-number" id="editor-current-bci-title">BCI-2026-0001</span>
+                        </div>
+                        <span class="status-pill draft" id="editor-current-status-pill">
+                            <span class="status-dot"></span>Brouillon
+                        </span>
+                    </div>
+
+                    <div class="editor-ribbon-actions">
+                        <button class="btn btn-outline" onclick="createNewOrderPrompt()">
+                            <svg viewBox="0 0 24 24" class="btn-icon" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>Nouveau</span>
+                        </button>
+
+                        <button class="btn btn-outline" style="border-color: #cbd5e1; background: #ffffff;" onclick="saveActiveOrderAsDraft()" title="Sauvegarder l'état actuel même incomplet pour reprendre plus tard">
+                            <svg viewBox="0 0 24 24" class="btn-icon" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                <polyline points="7 3 7 8 15 8"></polyline>
+                            </svg>
+                            <span>Sauvegarder Brouillon</span>
+                        </button>
+
+                        <button class="btn btn-primary" onclick="saveActiveOrderFinalized()" title="Finaliser le bon de commande">
+                            <svg viewBox="0 0 24 24" class="btn-icon" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            <span>Finaliser le Bon</span>
+                        </button>
+
+                        <button class="btn btn-dark" onclick="triggerPrint()">
+                            <svg viewBox="0 0 24 24" class="btn-icon" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                <rect x="6" y="14" width="12" height="8"></rect>
+                            </svg>
+                            <span>Imprimer A4</span>
+                        </button>
+
+                        <button class="btn btn-danger-outline" id="btn-editor-delete" onclick="deleteActiveOrder()" title="Supprimer définitivement ce bon">
+                            <svg viewBox="0 0 24 24" class="btn-icon" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                            <span>Supprimer</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Zone Split-Screen Préservée (Saisie à gauche / Document A4 officiel à droite) -->
+                <div class="split-screen">
+
+                    <!-- VOLET GAUCHE : FORMULAIRE DE SAISIE -->
+                    <div class="split-form-pane">
+                        <div class="form-header-bar">
+                            <h2>Formulaire de Commande</h2>
+                            <span style="font-size: 11px; color: var(--text-muted);">Mise à jour synchronisée en direct sur le A4</span>
+                        </div>
+
+                        <div class="form-body">
+
+                            <!-- Section 1 : En-tête & Informations -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">1. Informations Générales</h3>
+                                <div class="form-grid-2">
+                                    <div class="form-group">
+                                        <label for="inp-num" style="display: flex; justify-content: space-between;">
+                                            <span>Numéro de Bon</span>
+                                            <span style="font-size: 10px; color: var(--primary); font-weight: 600;">(Auto)</span>
+                                        </label>
+                                        <div style="display: flex; gap: 4px;">
+                                            <input type="text" id="inp-num" class="form-input" style="flex: 1;" placeholder="Ex: BCI-2026-0147" oninput="syncToDocument()">
+                                            <button type="button" class="btn btn-outline-dark btn-sm" title="Générer un numéro automatique suivant" onclick="generateAutoNumber()">Auto N°</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inp-date">Date d'émission</label>
+                                        <input type="date" id="inp-date" class="form-input" onchange="syncToDocument()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inp-requester">Demandeur</label>
+                                        <input type="text" id="inp-requester" class="form-input" placeholder="Ex: Marie Koumba" oninput="syncToDocument()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inp-service">Service Demandeur</label>
+                                        <input type="text" id="inp-service" class="form-input" list="services-list" placeholder="Ex: Laboratoire, Urgences..." oninput="syncToDocument()">
+                                        <datalist id="services-list">
+                                            <option value="Laboratoire d'analyses médicales">
+                                            <option value="Logistique & Approvisionnement">
+                                            <option value="Pharmacie Centrale">
+                                            <option value="Urgences">
+                                            <option value="Maternité / Salle d'accouchement">
+                                            <option value="Bloc Opératoire">
+                                            <option value="Pédiatrie">
+                                            <option value="Services Généraux">
+                                        </datalist>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inp-manager">Responsable</label>
+                                        <input type="text" id="inp-manager" class="form-input" placeholder="Ex: Dr. Paul M." oninput="syncToDocument()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inp-delivery">Lieu de livraison</label>
+                                        <input type="text" id="inp-delivery" class="form-input" placeholder="Ex: Entrepôt principal, Labo central..." oninput="syncToDocument()">
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label for="inp-supplier">Fournisseur Suggéré</label>
+                                        <input type="text" id="inp-supplier" class="form-input" placeholder="Ex: Papeterie Centrale, Fournisseur Médical..." oninput="syncToDocument()">
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="inp-date">Date d'émission</label>
-                                    <input type="date" id="inp-date" class="form-input" onchange="syncToDocument()">
-                                </div>
-                                <div class="form-group">
-                                    <label for="inp-requester">Demandeur</label>
-                                    <input type="text" id="inp-requester" class="form-input" placeholder="Ex: Marie Koumba" oninput="syncToDocument()">
-                                </div>
-                                <div class="form-group">
-                                    <label for="inp-service">Service Demandeur</label>
-                                    <input type="text" id="inp-service" class="form-input" list="services-list" placeholder="Ex: Laboratoire, Urgences..." oninput="syncToDocument()">
-                                    <datalist id="services-list">
-                                        <option value="Laboratoire d'analyses médicales">
-                                        <option value="Logistique & Approvisionnement">
-                                        <option value="Pharmacie Centrale">
-                                        <option value="Urgences">
-                                        <option value="Maternité / Salle d'accouchement">
-                                        <option value="Bloc Opératoire">
-                                        <option value="Pédiatrie">
-                                        <option value="Services Généraux">
-                                    </datalist>
-                                </div>
-                                <div class="form-group">
-                                    <label for="inp-manager">Responsable</label>
-                                    <input type="text" id="inp-manager" class="form-input" placeholder="Ex: Dr. Paul M." oninput="syncToDocument()">
-                                </div>
-                                <div class="form-group">
-                                    <label for="inp-delivery">Lieu de livraison</label>
-                                    <input type="text" id="inp-delivery" class="form-input" placeholder="Ex: Entrepôt principal, Labo central..." oninput="syncToDocument()">
-                                </div>
-                                <div class="form-group full-width">
-                                    <label for="inp-supplier">Fournisseur Suggéré</label>
-                                    <input type="text" id="inp-supplier" class="form-input" placeholder="Ex: Papeterie Centrale, Fournisseur Médical..." oninput="syncToDocument()">
+                            </div>
+
+                            <!-- Section 2 : Tableau dynamique des articles -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">2. Articles Demandés</h3>
+                                
+                                <table class="edit-articles-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 48%;">Désignation</th>
+                                            <th style="width: 14%;">Qté</th>
+                                            <th style="width: 22%;">P.U (FCFA)</th>
+                                            <th style="width: 16%; text-align: right;">Total</th>
+                                            <th style="width: 28px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="edit-articles-tbody">
+                                        <!-- Lignes générées en JS -->
+                                    </tbody>
+                                </table>
+
+                                <div class="articles-actions-bar">
+                                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="addNewArticleRow()">
+                                        + Ajouter un article
+                                    </button>
+                                    <div style="font-size: 13px; font-weight: 700; color: var(--primary);">
+                                        TOTAL : <span id="form-total-display">0</span> FCFA
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Section 2 : Tableau dynamique des articles -->
-                        <div class="form-section">
-                            <h3 class="form-section-title">2. Articles Demandés</h3>
-                            
-                            <table class="edit-articles-table">
-                                <thead>
+                            <!-- Section 3 : Motif de la demande -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">3. Motif de la Demande</h3>
+                                <div class="form-group">
+                                    <textarea id="inp-motif" class="form-input" rows="2" placeholder="Précisez la justification du besoin (ex: Rupture de stock imminente...)" oninput="syncToDocument()"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Section 4 : Validations manuscrites (Cases pour le visa papier) -->
+                            <div class="form-section">
+                                <h3 class="form-section-title">4. Validations & Signataires (Cases papier)</h3>
+                                <div class="form-grid-2">
+                                    <div class="form-group">
+                                        <label>1. Demandeur</label>
+                                        <input type="text" id="inp-val-name1" class="form-input" placeholder="Nom du demandeur" oninput="syncToDocument()">
+                                        <input type="date" id="inp-val-date1" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>2. Resp. de Service</label>
+                                        <input type="text" id="inp-val-name2" class="form-input" placeholder="Nom du responsable" oninput="syncToDocument()">
+                                        <input type="date" id="inp-val-date2" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>3. Dir. Financier</label>
+                                        <input type="text" id="inp-val-name3" class="form-input" placeholder="Nom du dir. financier" oninput="syncToDocument()">
+                                        <input type="date" id="inp-val-date3" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>4. Dir. Général</label>
+                                        <input type="text" id="inp-val-name4" class="form-input" placeholder="Nom du dir. général" oninput="syncToDocument()">
+                                        <input type="date" id="inp-val-date4" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- VOLET DROIT : APERÇU A4 EN DIRECT (Document officiel CHU Owendo) -->
+                    <div class="split-preview-pane">
+                        <div class="document-container" id="printable-doc">
+                            <!-- En-tête -->
+                            <header class="header">
+                                <div class="header-title">
+                                    <h1>Bon de Commande<br>Interne</h1>
+                                </div>
+                                <div class="header-right">
+                                    <div class="header-meta">
+                                        <p><strong>N° :</strong> <span id="pv-num">BCI-2026-0147</span></p>
+                                        <p><strong>Date :</strong> <span id="pv-date">09/10/2026</span></p>
+                                    </div>
+                                    <img src="logo.webp" alt="Logo CHU Owendo" class="header-logo">
+                                </div>
+                            </header>
+
+                            <!-- Informations sur la demande -->
+                            <section>
+                                <h2 class="section-title">Informations sur la demande</h2>
+                                <table class="info-table">
                                     <tr>
-                                        <th style="width: 48%;">Désignation</th>
-                                        <th style="width: 14%;">Qté</th>
-                                        <th style="width: 22%;">P.U (FCFA)</th>
-                                        <th style="width: 16%; text-align: right;">Total</th>
-                                        <th style="width: 28px;"></th>
+                                        <td class="label">Demandeur</td>
+                                        <td class="value" id="pv-requester">Marie Koumba</td>
+                                        <td class="label">Service</td>
+                                        <td class="value" id="pv-service">Logistique</td>
                                     </tr>
-                                </thead>
-                                <tbody id="edit-articles-tbody">
-                                    <!-- Lignes générées en JS -->
-                                </tbody>
-                            </table>
+                                    <tr>
+                                        <td class="label">Responsable</td>
+                                        <td class="value" id="pv-manager">Paul M.</td>
+                                        <td class="label">Lieu de livraison</td>
+                                        <td class="value" id="pv-delivery">Entrepôt principal</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Fournisseur suggéré</td>
+                                        <td class="value" colspan="3" id="pv-supplier">Papeterie Centrale</td>
+                                    </tr>
+                                </table>
+                            </section>
 
-                            <div class="articles-actions-bar">
-                                <button type="button" class="btn btn-outline-dark btn-sm" onclick="addNewArticleRow()">
-                                    + Ajouter un article
-                                </button>
-                                <div style="font-size: 13px; font-weight: 700; color: var(--primary);">
-                                    TOTAL : <span id="form-total-display">0</span> FCFA
+                            <!-- Articles demandés -->
+                            <section>
+                                <h2 class="section-title">Articles demandés</h2>
+                                <table class="articles-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 7%;">N°</th>
+                                            <th style="width: 45%;">Désignation</th>
+                                            <th style="width: 10%;">Qté</th>
+                                            <th style="width: 19%;">Prix unitaire (FCFA)</th>
+                                            <th style="width: 19%;">Total (FCFA)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pv-articles-tbody">
+                                        <!-- Lignes générées en temps réel -->
+                                    </tbody>
+                                </table>
+                            </section>
+
+                            <!-- Motif de la demande -->
+                            <section>
+                                <h2 class="section-title">Motif de la demande</h2>
+                                <div class="motif-box" id="pv-motif">
+                                    Réapprovisionnement trimestriel des fournitures de l'entrepôt.
                                 </div>
-                            </div>
+                            </section>
+
+                            <!-- Validations manuscrites (140px de haut pour tampons & signatures physiques) -->
+                            <section>
+                                <h2 class="section-title">Validations & Visas</h2>
+                                <table class="validations-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Demandeur</th>
+                                            <th>Responsable de service</th>
+                                            <th>Directeur financier</th>
+                                            <th>Directeur général</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <div class="val-cell-inner">
+                                                    <div>Nom : <span id="pv-val-name1">Marie Koumba</span></div>
+                                                    <div>Date : <span id="pv-val-date1">___ / ___ / ______</span></div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="val-cell-inner">
+                                                    <div>Nom : <span id="pv-val-name2">_________________</span></div>
+                                                    <div>Date : <span id="pv-val-date2">___ / ___ / ______</span></div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="val-cell-inner">
+                                                    <div>Nom : <span id="pv-val-name3">_________________</span></div>
+                                                    <div>Date : <span id="pv-val-date3">___ / ___ / ______</span></div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="val-cell-inner">
+                                                    <div>Nom : <span id="pv-val-name4">_________________</span></div>
+                                                    <div>Date : <span id="pv-val-date4">___ / ___ / ______</span></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </section>
+
+                            <footer class="footer-note">
+                                Document interne à usage exclusif du CHU d'Owendo. Système autonome sécurisé.
+                            </footer>
                         </div>
-
-                        <!-- Section 3 : Motif de la demande -->
-                        <div class="form-section">
-                            <h3 class="form-section-title">3. Motif de la Demande</h3>
-                            <div class="form-group">
-                                <textarea id="inp-motif" class="form-input" rows="2" placeholder="Précisez la justification du besoin (ex: Rupture de stock imminente, réapprovisionnement mensuel...)" oninput="syncToDocument()"></textarea>
-                            </div>
-                        </div>
-
-                        <!-- Section 4 : Validations & Signataires (Cases du bas) -->
-                        <div class="form-section">
-                            <h3 class="form-section-title">4. Validations & Signataires (Cases du bas)</h3>
-                            <div class="form-grid-2">
-                                <div class="form-group">
-                                    <label>1. Demandeur</label>
-                                    <input type="text" id="inp-val-name1" class="form-input" placeholder="Nom du demandeur" oninput="syncToDocument()">
-                                    <input type="date" id="inp-val-date1" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
-                                </div>
-                                <div class="form-group">
-                                    <label>2. Resp. de Service</label>
-                                    <input type="text" id="inp-val-name2" class="form-input" placeholder="Nom du responsable" oninput="syncToDocument()">
-                                    <input type="date" id="inp-val-date2" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
-                                </div>
-                                <div class="form-group">
-                                    <label>3. Dir. Financier</label>
-                                    <input type="text" id="inp-val-name3" class="form-input" placeholder="Nom du dir. financier" oninput="syncToDocument()">
-                                    <input type="date" id="inp-val-date3" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
-                                </div>
-                                <div class="form-group">
-                                    <label>4. Dir. Général</label>
-                                    <input type="text" id="inp-val-name4" class="form-input" placeholder="Nom du dir. général" oninput="syncToDocument()">
-                                    <input type="date" id="inp-val-date4" class="form-input" style="margin-top: 4px;" onchange="syncToDocument()">
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
 
-                    <div class="form-footer-actions">
-                        <button class="btn btn-primary" onclick="saveActiveOrder()">Enregistrer la commande</button>
-                        <button class="btn btn-dark" onclick="triggerPrint()">Imprimer la feuille A4</button>
-                    </div>
                 </div>
+            </section>
 
-                <!-- VOLET DROIT : APERÇU A4 EN DIRECT (Le document validé) -->
-                <div class="split-preview-pane">
-                    
-                    <div class="document-container" id="printable-doc">
-                        <!-- En-tête -->
-                        <header class="header">
-                            <div class="header-title">
-                                <h1>Bon de Commande<br>Interne</h1>
-                            </div>
-                            <div class="header-right">
-                                <div class="header-meta">
-                                    <p><strong>N° :</strong> <span id="pv-num">BCI-2026-0147</span></p>
-                                    <p><strong>Date :</strong> <span id="pv-date">09/10/2026</span></p>
-                                </div>
-                                <img src="logo.webp" alt="Logo CHU Owendo" class="header-logo">
-                            </div>
-                        </header>
 
-                        <!-- Informations sur la demande -->
-                        <section>
-                            <h2 class="section-title">Informations sur la demande</h2>
-                            <table class="info-table">
+            <!-- =============================================================
+                 VUE 3 : LE REGISTRE COMPLET (Archives & Gestion globale)
+                 ============================================================= -->
+            <section class="office-view-panel" id="view-registry">
+                <div class="registry-container">
+                    <div class="registry-header">
+                        <div>
+                            <h2>Registre Officiel des Bons de Commande</h2>
+                            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+                                Consultation, archivage et suppression des commandes de l'établissement
+                            </p>
+                        </div>
+
+                        <div class="registry-search-bar">
+                            <input type="text" id="registry-search" class="search-input" placeholder="Rechercher par N°, Service ou Demandeur..." oninput="filterRegistry()">
+                            <button class="btn btn-dark" onclick="createNewOrderPrompt()">+ Nouveau Bon</button>
+                        </div>
+                    </div>
+
+                    <div class="registry-table-card">
+                        <table class="crud-table">
+                            <thead>
                                 <tr>
-                                    <td class="label">Demandeur</td>
-                                    <td class="value" id="pv-requester">Marie Koumba</td>
-                                    <td class="label">Service</td>
-                                    <td class="value" id="pv-service">Logistique</td>
+                                    <th style="width: 14%;">N° de Bon</th>
+                                    <th style="width: 10%;">Date</th>
+                                    <th style="width: 18%;">Service Demandeur</th>
+                                    <th style="width: 15%;">Demandeur</th>
+                                    <th style="width: 8%; text-align: center;">Articles</th>
+                                    <th style="width: 12%; text-align: right;">Total (FCFA)</th>
+                                    <th style="width: 11%; text-align: center;">Statut</th>
+                                    <th style="width: 12%; text-align: center;">Actions</th>
                                 </tr>
-                                <tr>
-                                    <td class="label">Responsable</td>
-                                    <td class="value" id="pv-manager">Paul M.</td>
-                                    <td class="label">Lieu de livraison</td>
-                                    <td class="value" id="pv-delivery">Entrepôt principal</td>
-                                </tr>
-                                <tr>
-                                    <td class="label">Fournisseur suggéré</td>
-                                    <td class="value" colspan="3" id="pv-supplier">Papeterie Centrale</td>
-                                </tr>
-                            </table>
-                        </section>
-
-                        <!-- Articles demandés -->
-                        <section>
-                            <h2 class="section-title">Articles demandés</h2>
-                            <table class="articles-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 7%;">N°</th>
-                                        <th style="width: 45%;">Désignation</th>
-                                        <th style="width: 10%;">Qté</th>
-                                        <th style="width: 19%;">Prix unitaire (FCFA)</th>
-                                        <th style="width: 19%;">Total (FCFA)</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="pv-articles-tbody">
-                                    <!-- Lignes générées en temps réel -->
-                                </tbody>
-                            </table>
-                        </section>
-
-                        <!-- Motif de la demande -->
-                        <section>
-                            <h2 class="section-title">Motif de la demande</h2>
-                            <div class="motif-box" id="pv-motif">
-                                Réapprovisionnement trimestriel des fournitures de l'entrepôt (stock actuel sous le seuil minimal).
-                            </div>
-                        </section>
-
-                        <!-- Validations manuscrites (140px de haut) -->
-                        <section>
-                            <h2 class="section-title">Validations</h2>
-                            <table class="validations-table">
-                                <thead>
-                                    <tr>
-                                        <th>Demandeur</th>
-                                        <th>Responsable de service</th>
-                                        <th>Directeur financier</th>
-                                        <th>Directeur général</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="val-cell-inner">
-                                                <div>Nom : <span id="pv-val-name1">Marie Koumba</span></div>
-                                                <div>Date : <span id="pv-val-date1">___ / ___ / ______</span></div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="val-cell-inner">
-                                                <div>Nom : <span id="pv-val-name2">_________________</span></div>
-                                                <div>Date : <span id="pv-val-date2">___ / ___ / ______</span></div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="val-cell-inner">
-                                                <div>Nom : <span id="pv-val-name3">_________________</span></div>
-                                                <div>Date : <span id="pv-val-date3">___ / ___ / ______</span></div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="val-cell-inner">
-                                                <div>Nom : <span id="pv-val-name4">_________________</span></div>
-                                                <div>Date : <span id="pv-val-date4">___ / ___ / ______</span></div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </section>
-
-                        <!-- Note de bas de page -->
-                        <footer class="footer-note">
-                            Document interne à usage exclusif de l'entreprise. Exemple fictif : noms, montants et références à titre d'illustration.
-                        </footer>
-                    </div>
-
-                </div>
-
-            </div>
-        </section>
-
-
-        <!-- =================================================================
-             VUE 2 : REGISTRE DES COMMANDES (CRUD)
-             ================================================================= -->
-        <section class="view-panel" id="view-registry">
-            <div class="registry-container">
-                <div class="registry-header">
-                    <div>
-                        <h2>Registre des Bons de Commande</h2>
-                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
-                            Gestion complète (CRUD) des commandes passées au sein de l'hôpital
-                        </p>
-                    </div>
-
-                    <div class="registry-search-bar">
-                        <input type="text" id="registry-search" class="search-input" placeholder="Rechercher par N°, Service ou Demandeur..." oninput="filterRegistry()">
-                        <button class="btn btn-dark" onclick="createNewOrderPrompt()">+ Nouveau Bon</button>
+                            </thead>
+                            <tbody id="registry-tbody">
+                                <!-- Rendu dynamique des bons -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+            </section>
 
-                <div class="registry-table-card">
-                    <table class="crud-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 14%;">N° de Bon</th>
-                                <th style="width: 12%;">Date</th>
-                                <th style="width: 22%;">Service Demandeur</th>
-                                <th style="width: 18%;">Demandeur</th>
-                                <th style="width: 10%; text-align: center;">Articles</th>
-                                <th style="width: 12%; text-align: right;">Total (FCFA)</th>
-                                <th style="width: 12%; text-align: center;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="registry-tbody">
-                            <!-- Rendu dynamique des bons -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-    </main>
+        </main>
+    </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast-msg">Opération effectuée avec succès</div>
 
     <!-- Script logique de l'application -->
-    <script src="app.js"></script>
+    <script src="app.js?v=2"></script>
 </body>
 </html>
